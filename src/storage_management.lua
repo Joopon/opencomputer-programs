@@ -8,6 +8,8 @@ local num_chest_side = 2 --first left chest is -1, first right chest is 1, 0 is 
 local num_chest_rows = 3
 local curr_max_chest_height = 1
 
+local item_slots_reserved = 12 -- slots from 1 to item_slots_reserved are reserved for item transportation
+
 local function is_valid_chest_location(chest_column, chest_row)
     return math.abs(chest_column) <= num_chest_side and not(chest_column == 0)
             and 1 <= chest_row and chest_row <= num_chest_rows
@@ -61,6 +63,32 @@ function storage_management.returnto_origin(chest_column, chest_row, height)
     end
     move.down(height)
 end
+
+-- assumes that slots 1 to item_slots_reserved are empty
+-- returns the number of items taken from the chest
+function storage_management.take_items(number)
+    local slot = 1
+    robot.select(slot)
+    local taken = 0
+    while taken < number do
+        local got = robot.suck(math.min(number-taken, robot.space()))
+        if got == false then
+            break
+        end
+        taken = taken + got
+        if robot.space()==0 then
+            slot = slot + 1
+            robot.select(slot)
+            if slot > item_slots_reserved then
+                break
+            end
+        end
+    end
+
+    robot.select(1)
+    return taken
+end
+
 
 function storage_management.collect_item(chest_pos_x, chest_pos_y, num_items)
     storage_management.goto_chest(chest_pos_x, chest_pos_y)
