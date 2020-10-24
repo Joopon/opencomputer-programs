@@ -90,11 +90,12 @@ function storage_management.take_items(number)
 end
 
 
-function storage_management.collect_item(chest_pos_x, chest_pos_y, num_items)
+function storage_management.collect_items(chest_pos_x, chest_pos_y, num_items)
     storage_management.goto_chest(chest_pos_x, chest_pos_y)
-    os.sleep(1)
+    local items_taken = storage_management.take_items(num_items)
     storage_management.returnto_origin(chest_pos_x, chest_pos_y, 1)
     robot.turnAround()
+    print("I brought you ", items_taken, " items.")
 end
 
 
