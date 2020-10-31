@@ -31,10 +31,7 @@ function storage_management.goto_chest(chest_column, chest_row)
         print("error: called goto_chest with invalid chest location")
         return false
     end
-    for row=1, chest_row-1, 1 do
-        move.forward(2)
-    end
-
+    move.forward(2*(chest_row-1))
     if chest_column > 0 then
         -- chest on right side
         robot.turnRight()
