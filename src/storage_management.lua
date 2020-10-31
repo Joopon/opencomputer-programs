@@ -98,12 +98,15 @@ end
 -- start in front of first chest (height 1), end at height curr_max_chest_height + 1
 function storage_management.take_items_from_chesttower(number)
     local taken = 0
-    local height = 1
     for height=1, curr_max_chest_height, 1 do
         if detect_chest() then
             local num = storage_management.take_items(number-taken)
             taken = taken + num
             print("number of items taken:", num)
+            if(taken >= number) then
+                move.up(curr_max_chest_height-height+1)
+                break
+            end
         end
         move.up(1)
     end
