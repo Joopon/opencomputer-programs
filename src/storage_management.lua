@@ -1,5 +1,8 @@
 local robot = require("robot")
 local move = require("robot_movement")
+local sides = require("sides")
+local component = require("component")
+local inventory = component.inventory_controller
 
 local storage_management = {}
 
@@ -13,6 +16,12 @@ local item_slots_reserved = 12 -- slots from 1 to item_slots_reserved are reserv
 local function is_valid_chest_location(chest_column, chest_row)
     return math.abs(chest_column) <= num_chest_side and not(chest_column == 0)
             and 1 <= chest_row and chest_row <= num_chest_rows
+end
+
+-- returns true if there is a chest in front
+local function detect_chest()
+    local size = inventory.getInventorySize(sides.front)
+    return not size == nil
 end
 
 
@@ -64,7 +73,7 @@ function storage_management.returnto_origin(chest_column, chest_row, height)
     move.down(height)
 end
 
--- assumes that slots 1 to item_slots_reserved are empty
+-- fills from slot 1 to item_slots_reserved with number items from chest in front of robot
 -- returns the number of items taken from the chest
 function storage_management.take_items(number)
     local slot = 1
@@ -73,7 +82,10 @@ function storage_management.take_items(number)
     while taken < number do
         local got = robot.suck(math.min(number-taken, robot.space()))
         if got == false then
-            break
+            if not (robot.space() == 0) then
+                break
+            end
+            got = 0
         end
         taken = taken + got
         if robot.space()==0 then
