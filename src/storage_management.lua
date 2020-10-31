@@ -9,7 +9,7 @@ local storage_management = {}
 -- how many chests are to the left/right of the middle
 local num_chest_side = 2 --first left chest is -1, first right chest is 1, 0 is invalid
 local num_chest_rows = 3
-local curr_max_chest_height = 1
+local curr_max_chest_height = 3 -- number of chests from ground
 
 local item_slots_reserved = 12 -- slots from 1 to item_slots_reserved are reserved for item transportation
 
@@ -21,7 +21,7 @@ end
 -- returns true if there is a chest in front
 local function detect_chest()
     local size = inventory.getInventorySize(sides.front)
-    return not size == nil
+    return not (size == nil)
 end
 
 
@@ -54,7 +54,6 @@ function storage_management.returnto_origin(chest_column, chest_row, height)
         print("error: called returnto_origin with invalid chest_location or height")
         return false
     end
-    move.up(1)
     if chest_column > 0 then
         -- robot on right side
         robot.turnLeft()
@@ -101,13 +100,30 @@ function storage_management.take_items(number)
     return taken
 end
 
+-- start in front of first chest (height 1), end at height curr_max_chest_height + 1
+function storage_management.take_items_from_chesttower(number)
+    local taken = 0
+    local height = 1
+    for height=1, curr_max_chest_height, 1 do
+        if detect_chest() then
+            local num = storage_management.take_items(number-taken)
+            taken = taken + num
+            print("number of items taken:", num)
+        end
+        move.up(1)
+    end
+    if taken > number then
+        print("internal error: take_items_from_chesttower took too many items")
+    end
+    return taken
+end
 
 function storage_management.collect_items(chest_pos_x, chest_pos_y, num_items)
     storage_management.goto_chest(chest_pos_x, chest_pos_y)
-    local items_taken = storage_management.take_items(num_items)
-    storage_management.returnto_origin(chest_pos_x, chest_pos_y, 1)
+    local items_taken = storage_management.take_items_from_chesttower(num_items)
+    storage_management.returnto_origin(chest_pos_x, chest_pos_y, curr_max_chest_height)
     robot.turnAround()
-    print("I brought you ", items_taken, " items.")
+    print("I brought you", items_taken, "items.")
 end
 
 
