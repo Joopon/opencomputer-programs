@@ -49,9 +49,9 @@ function storage_management.goto_chest(chest_column, chest_row)
     return true
 end
 
-function storage_management.returnto_origin(chest_column, chest_row, height)
-    if not (is_valid_chest_location(chest_column, chest_row) and 0<height and height<=curr_max_chest_height) then
-        print("error: called returnto_origin with invalid chest_location or height")
+function storage_management.returnto_origin(chest_column, chest_row)
+    if not is_valid_chest_location(chest_column, chest_row) then
+        print("error: called returnto_origin with invalid chest_location")
         return false
     end
     if chest_column > 0 then
@@ -66,10 +66,8 @@ function storage_management.returnto_origin(chest_column, chest_row, height)
         robot.turnRight()
     end
 
-    for row=1, chest_row-1, 1 do
-        move.forward(2)
-    end
-    move.down(height)
+    move.forward(2*(chest_row-1))
+    return true
 end
 
 -- fills from slot 1 to item_slots_reserved with number items from chest in front of robot
@@ -123,6 +121,7 @@ function storage_management.collect_items(chest_pos_x, chest_pos_y, num_items)
     local items_taken = storage_management.take_items_from_chesttower(num_items)
     storage_management.returnto_origin(chest_pos_x, chest_pos_y, curr_max_chest_height)
     robot.turnAround()
+    move.down(curr_max_chest_height)
     print("I brought you", items_taken, "items.")
 end
 
