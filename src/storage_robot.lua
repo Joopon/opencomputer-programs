@@ -4,7 +4,7 @@ local sides = require("sides")
 local component = require("component")
 local inventory = component.inventory_controller
 
-local storage_management = {}
+local storage_robot = {}
 
 -- how many chests are to the left/right of the middle
 local num_chest_side = 2 --first left chest is -1, first right chest is 1, 0 is invalid
@@ -26,7 +26,7 @@ end
 
 
 -- starting in the middle of the first chest row
-function storage_management.goto_chest(chest_column, chest_row)
+function storage_robot.goto_chest(chest_column, chest_row)
     if not is_valid_chest_location(chest_column, chest_row) then
         print("error: called goto_chest with invalid chest location")
         return false
@@ -46,7 +46,7 @@ function storage_management.goto_chest(chest_column, chest_row)
     return true
 end
 
-function storage_management.returnto_origin(chest_column, chest_row)
+function storage_robot.returnto_origin(chest_column, chest_row)
     if not is_valid_chest_location(chest_column, chest_row) then
         print("error: called returnto_origin with invalid chest_location")
         return false
@@ -69,7 +69,7 @@ end
 
 -- fills from slot 1 to item_slots_reserved with number items from chest in front of robot
 -- returns the number of items taken from the chest
-function storage_management.take_items(number)
+function storage_robot.take_items(number)
     local slot = 1
     robot.select(slot)
     local taken = 0
@@ -96,11 +96,11 @@ function storage_management.take_items(number)
 end
 
 -- start in front of first chest (height 1), end at height curr_max_chest_height + 1
-function storage_management.take_items_chesttower(number)
+function storage_robot.take_items_chesttower(number)
     local taken = 0
     for height=1, curr_max_chest_height, 1 do
         if detect_chest() then
-            local num = storage_management.take_items(number-taken)
+            local num = storage_robot.take_items(number-taken)
             taken = taken + num
             print("number of items taken:", num)
             if(taken >= number) then
@@ -120,7 +120,7 @@ end
 -- returns boolean, number:
 --   boolean: true if all items were put, false if there are still items left
 --   number: the number of items put into the chest
-function storage_management.put_items()
+function storage_robot.put_items()
     local slot = 0
     local put_items = 0
     local ret = true
@@ -149,13 +149,13 @@ end
 -- returns boolean, number:
 --   boolean: true if all items were put, false if there are still items left
 --   number: the number of items put into the chest
-function storage_management.put_items_chesttower()
+function storage_robot.put_items_chesttower()
     local put_items = 0
     local ret = false
     for height=1, curr_max_chest_height, 1 do
         if detect_chest() then
             local num
-            ret, num = storage_management.put_items()
+            ret, num = storage_robot.put_items()
             put_items = put_items + num
             print("number of items put:", num)
             if(ret) then
@@ -168,19 +168,19 @@ function storage_management.put_items_chesttower()
     return ret, put_items
 end
 
-function storage_management.collect_items(chest_pos_x, chest_pos_y, num_items)
-    storage_management.goto_chest(chest_pos_x, chest_pos_y)
-    local items_taken = storage_management.take_items_chesttower(num_items)
-    storage_management.returnto_origin(chest_pos_x, chest_pos_y)
+function storage_robot.collect_items(chest_pos_x, chest_pos_y, num_items)
+    storage_robot.goto_chest(chest_pos_x, chest_pos_y)
+    local items_taken = storage_robot.take_items_chesttower(num_items)
+    storage_robot.returnto_origin(chest_pos_x, chest_pos_y)
     robot.turnAround()
     move.down(curr_max_chest_height)
     print("I brought you", items_taken, "items.")
 end
 
-function storage_management.store_items(chest_pos_x, chest_pos_y)
-    storage_management.goto_chest(chest_pos_x, chest_pos_y)
-    local ret, put_items = storage_management.put_items_chesttower()
-    storage_management.returnto_origin(chest_pos_x, chest_pos_y)
+function storage_robot.store_items(chest_pos_x, chest_pos_y)
+    storage_robot.goto_chest(chest_pos_x, chest_pos_y)
+    local ret, put_items = storage_robot.put_items_chesttower()
+    storage_robot.returnto_origin(chest_pos_x, chest_pos_y)
     robot.turnAround()
     move.down(curr_max_chest_height)
     print("I stored", put_items, "items.")
@@ -188,4 +188,4 @@ function storage_management.store_items(chest_pos_x, chest_pos_y)
 end
 
 
-return storage_management
+return storage_robot
