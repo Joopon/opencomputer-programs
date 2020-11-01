@@ -116,6 +116,35 @@ function storage_management.take_items_from_chesttower(number)
     return taken
 end
 
+-- puts items from slot 1 to item_slots_reserved into chest in front of robot
+-- returns boolean, number:
+--   boolean: true if all items were put, false if there are still items left
+--   number: the number of items put into the chest
+function storage_management.put_items()
+    local slot = 0
+    local put_items = 0
+    local ret = true
+    while slot < item_slots_reserved do
+        slot = slot + 1
+        robot.select(slot)
+        local in_slot_before = robot.count()
+        if not (in_slot_before==0) then
+            if not robot.drop() then
+                ret = false
+                break -- there are still items but this chest is full
+            end
+            local in_slot_after = robot.count()
+            put_items = put_items + (in_slot_before - in_slot_after)
+            if not (in_slot_after==0) then
+                slot = slot - 1 -- retry same slot again
+            end
+        end
+    end
+
+    robot.select(1)
+    return ret, put_items
+end
+
 function storage_management.collect_items(chest_pos_x, chest_pos_y, num_items)
     storage_management.goto_chest(chest_pos_x, chest_pos_y)
     local items_taken = storage_management.take_items_from_chesttower(num_items)
