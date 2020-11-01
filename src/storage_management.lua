@@ -96,7 +96,7 @@ function storage_management.take_items(number)
 end
 
 -- start in front of first chest (height 1), end at height curr_max_chest_height + 1
-function storage_management.take_items_from_chesttower(number)
+function storage_management.take_items_chesttower(number)
     local taken = 0
     for height=1, curr_max_chest_height, 1 do
         if detect_chest() then
@@ -111,7 +111,7 @@ function storage_management.take_items_from_chesttower(number)
         move.up(1)
     end
     if taken > number then
-        print("internal error: take_items_from_chesttower took too many items")
+        print("internal error: take_items_chesttower took too many items")
     end
     return taken
 end
@@ -145,15 +145,47 @@ function storage_management.put_items()
     return ret, put_items
 end
 
+-- start in front of first chest (height 1), end at height curr_max_chest_height + 1
+-- returns boolean, number:
+--   boolean: true if all items were put, false if there are still items left
+--   number: the number of items put into the chest
+function storage_management.put_items_chesttower()
+    local put_items = 0
+    local ret = false
+    for height=1, curr_max_chest_height, 1 do
+        if detect_chest() then
+            local num
+            ret, num = storage_management.put_items()
+            put_items = put_items + num
+            print("number of items put:", num)
+            if(ret) then
+                move.up(curr_max_chest_height-height+1)
+                break
+            end
+        end
+        move.up(1)
+    end
+    return ret, put_items
+end
+
 function storage_management.collect_items(chest_pos_x, chest_pos_y, num_items)
     storage_management.goto_chest(chest_pos_x, chest_pos_y)
-    local items_taken = storage_management.take_items_from_chesttower(num_items)
-    storage_management.returnto_origin(chest_pos_x, chest_pos_y, curr_max_chest_height)
+    local items_taken = storage_management.take_items_chesttower(num_items)
+    storage_management.returnto_origin(chest_pos_x, chest_pos_y)
     robot.turnAround()
     move.down(curr_max_chest_height)
     print("I brought you", items_taken, "items.")
 end
 
+function storage_management.store_items(chest_pos_x, chest_pos_y)
+    storage_management.goto_chest(chest_pos_x, chest_pos_y)
+    local ret, put_items = storage_management.put_items_chesttower()
+    storage_management.returnto_origin(chest_pos_x, chest_pos_y)
+    robot.turnAround()
+    move.down(curr_max_chest_height)
+    print("I stored", put_items, "items.")
+    print("No items are left in my inventory:", ret, "\n")
+end
 
 
 return storage_management
