@@ -16,13 +16,19 @@ function communication.setup()
         local match = string.gmatch(line, "[^=]+")
         local rcv_name = match()
         local rcv_addr = match()
-        print("receiver: "..rcv_name.." address: "..rcv_addr)
+        print("receiver: "..rcv_name..", address: "..rcv_addr)
         receiver_list[rcv_name] = rcv_addr
     end
     config:close()
     return true
 end
 
-
+function communication.list_receivers()
+    local list = {}
+    for rcv_name, _ in pairs(receiver_list) do
+        table.insert(list, rcv_name)
+    end
+    return list
+end
 
 return communication
