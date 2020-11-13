@@ -5,21 +5,21 @@ local serialization = require("serialization")
 
 local communication = {}
 
-local receiver_list = {}
+local device_list = {}
 local PATH_CONFIG = "/etc/communication.cfg"
 
 -- message types:
 communication.ACK_MSG = "communication_ack_message"
 
-local function get_address_port(receiver)
-    local rcv = receiver_list[receiver]
-    if rcv == nil then
-        print("warning communication: couldn't find receiver '".. receiver.."'in receiver_list")
+local function get_address_port(device)
+    local dev = device_list[device]
+    if dev == nil then
+        print("warning communication: couldn't find device '"..device.."'in device_list")
         return nil
     end
-    local rcv_address = rcv["address"]
-    local rcv_port = rcv["port"]
-    return rcv_address, rcv_port
+    local dev_address = dev["address"]
+    local dev_port = dev["port"]
+    return dev_address, dev_port
 end
 
 local function send(rcv_address, rcv_port, message_type, message)
@@ -38,39 +38,40 @@ end
 function communication.setup()
     local config = io.open(PATH_CONFIG, "r")
     if not config then
-        print("error communication.setup(): no config at "..PATH_CONFIG)
+        print("error communication.setup(): no config at "..PATH_CONFIG)R
         return false
     end
 
     for line in config:lines() do
         local match = string.gmatch(line, "[^=,]+")
-        local rcv_name = match()
-        local rcv_addr = match()
-        local rcv_port = match()
-        if rcv_name == nil or rcv_addr == nil or rcv_port == nil or tonumber(rcv_port) == nil then
+        local dev_name = match()
+        local dev_addr = match()
+        local dev_port = match()
+        if dev_name == nil or dev_addr == nil or dev_port == nil or tonumber(dev_port) == nil then
             print("warning communication.setup(): found bad formatted line: "..line)
         else
-            print("receiver: "..rcv_name..", address: "..rcv_addr..", port: "..rcv_port)
-            rcv_port = tonumber(rcv_port)
-            receiver_list[rcv_name] = {
-                address = rcv_addr,
-                port    = rcv_port
+            print("name: ".. dev_name ..", address: "..dev_addr..", port: "..dev_port)
+            dev_port = tonumber(dev_port)
+            device_list[dev_name] = {
+                address = dev_addr,
+                port    = dev_port
             }
-            modem.open(rcv_port)
+            modem.open(dev_port)
         end
     end
     config:close()
     return true
 end
 
-function communication.list_receivers()
+function communication.list_devices()
     local list = {}
-    for rcv_name, _ in pairs(receiver_list) do
-        table.insert(list, rcv_name)
+    for dev_name, _ in pairs(device_list) do
+        table.insert(list, dev_name)
     end
     return list
 end
 
+-- receiver: string, device name
 -- message_type: string
 -- message: any except functions
 -- returns true on success, false on failure
@@ -83,6 +84,7 @@ function communication.send(receiver, message_type, message)
     return send(rcv_address, rcv_port, message_type, message)
 end
 
+-- receiver: string, device name
 -- message_type: string
 -- message: any except functions
 -- timeout: optional, adds timeout [s] waiting for ack
