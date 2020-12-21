@@ -33,5 +33,13 @@ function queue.pop(fifo)
     return elem
 end
 
+function queue.is_empty(fifo)
+    return fifo.first == fifo.last
+end
+
+function queue.is_full(fifo)
+    return (fifo.last + 1) % (fifo.size+1) == fifo.first
+end
+
 return queue
 
