@@ -3,6 +3,8 @@ local move = require("robot_movement")
 local sides = require("sides")
 local component = require("component")
 local inventory = component.inventory_controller
+local communication = require("communication")
+local storage_messages = require("storage_messages")
 
 local storage_robot = {}
 
@@ -187,5 +189,25 @@ function storage_robot.store_items(chest_pos_x, chest_pos_y)
     print("No items are left in my inventory:", ret, "\n")
 end
 
+function storage_robot.main()
+    if not communication.setup() then
+        print("error storage_robot.main(): failed to setup communication")
+        return
+    end
+
+    while true do
+        local _, _, message_type, message = communication.receive()
+        if message_type == storage_messages.ITEM_COLLECT_REQUEST then
+            if message.item_record == nil or message.number_of_items == nil or message.number_of_items <= 0 then
+                print("warning storage_robot.main(): received invalid ITEM_COLLECT_REQUEST")
+            else
+                local chest_location = message.item_record.chest_location
+                storage_robot.collect_items(chest_location.row, chest_location.column, message.number_of_items)
+            end
+        else
+            print("warning storage_robot.main(): received unexpected message of type "..message_type)
+        end
+    end
+end
 
 return storage_robot
