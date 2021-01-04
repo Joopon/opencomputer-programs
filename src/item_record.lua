@@ -14,7 +14,11 @@ end
 
 -- item: table returned from inventory_controller.getStackInInternalSlot()
 function item_record.get_id(item)
-    return item.name + tostring(item.damage)
+    return item.name..tostring(item.damage)
 end
 
+function item_record.set_amount(item_record, new_amount)
+    item_record.amount = new_amount
+    assert(item_record.amount >= 0)
+end
 return item_record

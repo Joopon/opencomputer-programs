@@ -205,7 +205,7 @@ function storage_robot.main()
             else
                 local chest_location = message.item_record.chest_location
                 local items_taken = storage_robot.collect_items(chest_location.row, chest_location.column, message.number_of_items)
-                local message = storage_messages.new_item_collect_response(message.item_record, items_taken)
+                local message = storage_messages.new_item_collect_response(message.item_record, message.number_of_items, items_taken)
                 while not communication.send_with_ack(SERVER_NAME, storage_messages.ITEM_COLLECT_RESPONSE, message) do
                 end
             end

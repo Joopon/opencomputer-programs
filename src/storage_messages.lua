@@ -14,14 +14,16 @@ function storage_messages.check_item_collect_request(message)
     return not (message.item_record == nil or message.number_of_items == nil or message.number_of_items <= 0)
 end
 
-function storage_messages.new_item_collect_response(item_record, num_collected)
+function storage_messages.new_item_collect_response(item_record, num_requested, num_collected)
     return {
         item_record = item_record,
+        number_requested = num_requested,
         number_collected = num_collected
     }
 end
 function storage_messages.check_item_collect_response(message)
-    return not(message.item_record == nil or message.number_collected == nil or message.number_collected < 0)
+    return not(message.item_record == nil or message.number_collected == nil or message.number_collected < 0
+            or message.number_requested == nil or message.number_requested < 0)
 end
 
 return storage_messages

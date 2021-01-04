@@ -198,7 +198,9 @@ function communication.receive_blocking(timeout)
     return communication.receive()
 end
 
--- returns immediately if no message is available
+-- terminates immediately if no message is available
+-- returns on success: device: string, distance: number, message_type: string, message: any except functions
+--         on fail: nil
 function communication.receive()
     local msg = queue.pop(message_queue)
     if(msg == nil) then
