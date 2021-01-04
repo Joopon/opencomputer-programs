@@ -180,10 +180,10 @@ function communication.send_with_ack(receiver, message_type, message)
     return true
 end
 
--- timeout: optional, adds timeout [s] waiting for ack
+-- timeout: optional, adds timeout [s] waiting for message
 -- returns on success: device: string, distance: number, message_type: string, message: any except functions
 --         on fail: nil
-function communication.receive(timeout)
+function communication.receive_blocking(timeout)
     if queue.is_empty(message_queue) then
         if timeout then
             local event_type = event.pull(timeout, communication.MSG_EVENT)
@@ -195,9 +195,14 @@ function communication.receive(timeout)
         end
     end
 
+    return communication.receive()
+end
+
+-- returns immediately if no message is available
+function communication.receive()
     local msg = queue.pop(message_queue)
     if(msg == nil) then
-        print("error communication.receive(): expected message queue to hold message")
+        -- queue doesn't contain a message
         return nil
     end
 

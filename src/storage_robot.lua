@@ -14,6 +14,7 @@ local num_chest_rows = 3
 local curr_max_chest_height = 3 -- number of chests from ground
 
 local item_slots_reserved = 12 -- slots from 1 to item_slots_reserved are reserved for item transportation
+local SERVER_NAME = "Server"
 
 local function is_valid_chest_location(chest_column, chest_row)
     return math.abs(chest_column) <= num_chest_side and not(chest_column == 0)
@@ -104,7 +105,7 @@ function storage_robot.take_items_chesttower(number)
         if detect_chest() then
             local num = storage_robot.take_items(number-taken)
             taken = taken + num
-            print("number of items taken:", num)
+            print("number of items taken: "..num)
             if(taken >= number) then
                 move.up(curr_max_chest_height-height+1)
                 break
@@ -159,7 +160,7 @@ function storage_robot.put_items_chesttower()
             local num
             ret, num = storage_robot.put_items()
             put_items = put_items + num
-            print("number of items put:", num)
+            print("number of items put: "..num)
             if(ret) then
                 move.up(curr_max_chest_height-height+1)
                 break
@@ -176,7 +177,8 @@ function storage_robot.collect_items(chest_pos_x, chest_pos_y, num_items)
     storage_robot.returnto_origin(chest_pos_x, chest_pos_y)
     robot.turnAround()
     move.down(curr_max_chest_height)
-    print("I brought you", items_taken, "items.")
+    print("I brought you "..items_taken.." items.")
+    return items_taken
 end
 
 function storage_robot.store_items(chest_pos_x, chest_pos_y)
@@ -185,8 +187,8 @@ function storage_robot.store_items(chest_pos_x, chest_pos_y)
     storage_robot.returnto_origin(chest_pos_x, chest_pos_y)
     robot.turnAround()
     move.down(curr_max_chest_height)
-    print("I stored", put_items, "items.")
-    print("No items are left in my inventory:", ret, "\n")
+    print("I stored "..put_items.." items.")
+    print("No items are left in my inventory: "..tostring(ret).."\n")
 end
 
 function storage_robot.main()
@@ -196,13 +198,16 @@ function storage_robot.main()
     end
 
     while true do
-        local _, _, message_type, message = communication.receive()
+        local _, _, message_type, message = communication.receive_blocking()
         if message_type == storage_messages.ITEM_COLLECT_REQUEST then
-            if message.item_record == nil or message.number_of_items == nil or message.number_of_items <= 0 then
+            if not storage_messages.check_item_collect_request(message) then
                 print("warning storage_robot.main(): received invalid ITEM_COLLECT_REQUEST")
             else
                 local chest_location = message.item_record.chest_location
-                storage_robot.collect_items(chest_location.row, chest_location.column, message.number_of_items)
+                local items_taken = storage_robot.collect_items(chest_location.row, chest_location.column, message.number_of_items)
+                local message = storage_messages.new_item_collect_response(message.item_record, items_taken)
+                while not communication.send_with_ack(SERVER_NAME, storage_messages.ITEM_COLLECT_RESPONSE, message) do
+                end
             end
         else
             print("warning storage_robot.main(): received unexpected message of type "..message_type)
