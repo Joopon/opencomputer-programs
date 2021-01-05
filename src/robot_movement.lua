@@ -27,5 +27,16 @@ function robot_movement.down(distance)
     move(distance, robot.down)
 end
 
+function robot_movement.turnRight()
+    robot.turnRight()
+end
+
+function robot_movement.turnLeft()
+    robot.turnLeft()
+end
+
+function robot_movement.turnAround()
+    robot.turnAround()
+end
 
 return robot_movement

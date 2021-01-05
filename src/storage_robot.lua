@@ -52,14 +52,14 @@ function storage_robot.goto_chest(chest_column, chest_row)
     move.forward(2*(chest_row-1))
     if chest_column > 0 then
         -- chest on right side
-        robot.turnRight()
+        move.turnRight()
         move.forward(chest_column*2)
-        robot.turnLeft()
+        move.turnLeft()
     else
         -- chest on left side
-        robot.turnLeft()
+        move.turnLeft()
         move.forward(math.abs(chest_column)*2)
-        robot.turnRight()
+        move.turnRight()
     end
     return true
 end
@@ -71,14 +71,14 @@ function storage_robot.returnto_origin(chest_column, chest_row)
     end
     if chest_column > 0 then
         -- robot on right side
-        robot.turnLeft()
+        move.turnLeft()
         move.forward(chest_column*2)
-        robot.turnLeft()
+        move.turnLeft()
     else
         -- robot on left side
-        robot.turnRight()
+        move.turnRight()
         move.forward(math.abs(chest_column)*2)
-        robot.turnRight()
+        move.turnRight()
     end
 
     move.forward(2*(chest_row-1))
@@ -90,10 +90,10 @@ function storage_robot.from_garage_to_origin()
     move.forward(math.abs(origin_to_garage.x))
     if origin_to_garage.x > 0 then
         -- garage on right side
-        robot.turnRight()
+        move.turnRight()
     else
         -- garage on left side
-        robot.turnLeft()
+        move.turnLeft()
     end
     move.forward(origin_to_garage.y-2)
 end
@@ -103,13 +103,13 @@ function storage_robot.from_origin_to_garage()
     move.forward(origin_to_garage.y-2)
     if origin_to_garage.x > 0 then
         -- garage on right side
-        robot.turnLeft()
+        move.turnLeft()
     else
         -- garage on left side
-        robot.turnRight()
+        move.turnRight()
     end
     move.forward(math.abs(origin_to_garage.x))
-    robot.turnAround()
+    move.turnAround()
     move.down(1)
 end
 
@@ -237,14 +237,14 @@ function storage_robot.collect_items(chest_pos_x, chest_pos_y, num_items)
     local items_taken = storage_robot.take_items_chesttower(num_items)
     storage_robot.returnto_origin(chest_pos_x, chest_pos_y)
     move.forward(1)
-    robot.turnLeft()
+    move.turnLeft()
     move.forward(1)
-    robot.turnRight()
+    move.turnRight()
     move.down(curr_max_chest_height)
     storage_robot.flush_items()
-    robot.turnRight()
+    move.turnRight()
     move.forward(1)
-    robot.turnLeft()
+    move.turnLeft()
     move.up(1)
     storage_robot.from_origin_to_garage()
     print("I brought you "..items_taken.." items.")
@@ -255,7 +255,7 @@ function storage_robot.store_items(chest_pos_x, chest_pos_y)
     storage_robot.goto_chest(chest_pos_x, chest_pos_y)
     local ret, put_items = storage_robot.put_items_chesttower()
     storage_robot.returnto_origin(chest_pos_x, chest_pos_y)
-    robot.turnAround()
+    move.turnAround()
     move.down(curr_max_chest_height)
     print("I stored "..put_items.." items.")
     print("No items are left in my inventory: "..tostring(ret).."\n")
