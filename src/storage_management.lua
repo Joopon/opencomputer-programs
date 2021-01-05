@@ -11,7 +11,7 @@ local ROBOT_BUSY = "robot_state_busy"
 
 local item_record_list = {}
 local storage_robot_list = {
-    Dummy = { state = ROBOT_BUSY },
+    Megumin = { state = ROBOT_AVAILABLE },
     Mute = { state = ROBOT_AVAILABLE }
 }
 
@@ -54,7 +54,7 @@ function storage_management.test()
     }
     local dummy_record = get_item_record(dummy_item)
     if dummy_record == nil then
-        dummy_record = item_rec.new_item_record(dummy_item, 2, 1, 64)
+        dummy_record = item_rec.new_item_record(dummy_item, 3, -2, 256)
         add_item_record(dummy_record)
     end
 

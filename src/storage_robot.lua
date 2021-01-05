@@ -5,6 +5,7 @@ local component = require("component")
 local inventory = component.inventory_controller
 local communication = require("communication")
 local storage_messages = require("storage_messages")
+local config_parser = require("config_parser")
 
 local storage_robot = {}
 
@@ -14,7 +15,10 @@ local num_chest_rows = 3
 local curr_max_chest_height = 3 -- number of chests from ground
 
 local item_slots_reserved = 12 -- slots from 1 to item_slots_reserved are reserved for item transportation
-local SERVER_NAME = "Server"
+local CHECK_CHEST_INTERVAL=2
+local PATH_CONFIG = "/etc/storage_robot.cfg"
+local server_name
+local origin_to_garage = {} -- has entries x (1 means 1 to the right, -2 means 2 to the left), y (number blocks from garage to origin)
 
 local function is_valid_chest_location(chest_column, chest_row)
     return math.abs(chest_column) <= num_chest_side and not(chest_column == 0)
@@ -27,6 +31,17 @@ local function detect_chest()
     return not (size == nil)
 end
 
+function storage_robot.setup()
+    local config = config_parser.parse(PATH_CONFIG)
+    if config==nil or config.server_name==nil or config.origin_to_garage==nil then
+        return false
+    end
+    server_name = config.server_name[1]
+    origin_to_garage.x = tonumber(config.origin_to_garage[1])
+    origin_to_garage.y = tonumber(config.origin_to_garage[2])
+
+    return origin_to_garage.x~=nil and origin_to_garage.y~=nil
+end
 
 -- starting in the middle of the first chest row
 function storage_robot.goto_chest(chest_column, chest_row)
@@ -68,6 +83,34 @@ function storage_robot.returnto_origin(chest_column, chest_row)
 
     move.forward(2*(chest_row-1))
     return true
+end
+
+-- stops one block before origin ((0,-1) from origin)
+function storage_robot.from_garage_to_origin()
+    move.forward(math.abs(origin_to_garage.x))
+    if origin_to_garage.x > 0 then
+        -- garage on right side
+        robot.turnRight()
+    else
+        -- garage on left side
+        robot.turnLeft()
+    end
+    move.forward(origin_to_garage.y-2)
+end
+
+-- starts one block before origin ((0,-1) from origin and one block above ground
+function storage_robot.from_origin_to_garage()
+    move.forward(origin_to_garage.y-2)
+    if origin_to_garage.x > 0 then
+        -- garage on right side
+        robot.turnLeft()
+    else
+        -- garage on left side
+        robot.turnRight()
+    end
+    move.forward(math.abs(origin_to_garage.x))
+    robot.turnAround()
+    move.down(1)
 end
 
 -- fills from slot 1 to item_slots_reserved with number items from chest in front of robot
@@ -171,12 +214,39 @@ function storage_robot.put_items_chesttower()
     return ret, put_items
 end
 
+-- puts all items from slot 1 to item_slots_reserved into chest in front of robot.
+-- robots waits until it can put all items
+function storage_robot.flush_items()
+    local slot = 1
+    while slot <= item_slots_reserved do
+        robot.select(slot)
+        robot.drop()
+        while robot.count() ~= 0 do
+            os.sleep(CHECK_CHEST_INTERVAL)
+            robot.drop()
+        end
+        slot = slot + 1
+    end
+    robot.select(1)
+end
+
 function storage_robot.collect_items(chest_pos_x, chest_pos_y, num_items)
+    storage_robot.from_garage_to_origin()
+    move.forward(1)
     storage_robot.goto_chest(chest_pos_x, chest_pos_y)
     local items_taken = storage_robot.take_items_chesttower(num_items)
     storage_robot.returnto_origin(chest_pos_x, chest_pos_y)
-    robot.turnAround()
+    move.forward(1)
+    robot.turnLeft()
+    move.forward(1)
+    robot.turnRight()
     move.down(curr_max_chest_height)
+    storage_robot.flush_items()
+    robot.turnRight()
+    move.forward(1)
+    robot.turnLeft()
+    move.up(1)
+    storage_robot.from_origin_to_garage()
     print("I brought you "..items_taken.." items.")
     return items_taken
 end
@@ -192,6 +262,10 @@ function storage_robot.store_items(chest_pos_x, chest_pos_y)
 end
 
 function storage_robot.main()
+    if not storage_robot.setup() then
+        print("error storage_robot.main(): failed to setup storage_robot")
+        return
+    end
     if not communication.setup() then
         print("error storage_robot.main(): failed to setup communication")
         return
@@ -206,7 +280,7 @@ function storage_robot.main()
                 local chest_location = message.item_record.chest_location
                 local items_taken = storage_robot.collect_items(chest_location.row, chest_location.column, message.number_of_items)
                 local message = storage_messages.new_item_collect_response(message.item_record, message.number_of_items, items_taken)
-                while not communication.send_with_ack(SERVER_NAME, storage_messages.ITEM_COLLECT_RESPONSE, message) do
+                while not communication.send_with_ack(server_name, storage_messages.ITEM_COLLECT_RESPONSE, message) do
                 end
             end
         else
